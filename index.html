@@ -156,7 +156,7 @@
     <header>
       <p class="eyebrow">Lien musique émotions</p>
       <h1>Musique &amp; <em>Émotions</em></h1>
-      <p>Écoutez chaque extrait et associez-le à l'émotion qu'il évoque le plus spontanément pour vous. Il n'y a pas de bonne ou mauvaise réponse !</p>
+      <p>Écoutez chaque extrait et associez-le à l'émotion qu'il évoque le plus spontanément pour vous. Il n'y a pas de bonne ou mauvaise réponse !!</p>
     </header>
     <div class="survey-progress">
       <div class="survey-progress-track"><div class="survey-progress-fill" id="progressFill"></div></div>
@@ -175,7 +175,7 @@
     <div class="check">✦</div>
     <h2>Merci pour votre participation</h2>
     <p>Vos réponses ont bien été enregistrées.</p>
-    <button class="reveal-btn" onclick="showFeedback()">Voir mes associations vs les vôtres →</button>
+    <button class="reveal-btn" onclick="showFeedback()">Voir les associations pensées lors du choix des musiques →</button>
   </div>
 
   <!-- ══ FEEDBACK + COMMENT ══ -->
@@ -193,7 +193,7 @@
     <!-- Champ commentaire -->
     <div class="comment-section">
       <h3>Votre avis sur ces associations</h3>
-      <p>Êtes-vous d'accord avec les émotions que j'ai choisies pour chaque extrait ? Certaines vous semblent-elles évidentes, d'autres surprenantes ? N'hésitez pas à développer.</p>
+      <p>Êtes-vous d'accord avec les émotions que choisies pour chaque extrait ? Certaines vous semblent-elles évidentes, d'autres surprenantes ? N'hésitez pas à développer.</p>
       <textarea class="comment-textarea" id="commentField" placeholder="Vos impressions, accords ou désaccords…"></textarea>
       <button class="comment-send-btn" id="commentBtn" onclick="sendComment()">Envoyer mon commentaire</button>
       <p class="comment-status" id="commentStatus"></p>
@@ -420,7 +420,7 @@ function showFeedback() {
             <span class="fb-tag ${ok?'match':'miss'}">${user}</span>
           </div>
           <div class="fb-col">
-            <p class="fb-label">Mon association</p>
+            <p class="fb-label">Association attendue</p>
             <span class="fb-tag yours">${mine}</span>
           </div>
         </div>
