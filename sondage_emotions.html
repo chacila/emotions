@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sondage — Émotions & Musique</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0e0e10; --surface:#16161a; --border:rgba(255,255,255,.07);
+    --text:#e8e6e0; --muted:#7a7870; --accent:#c9a96e;
+    --accent-dim:rgba(201,169,110,.15); --progress-bg:rgba(255,255,255,.08);
+    --green:#7fcf9a; --green-dim:rgba(127,207,154,.12);
+    --red:#e07a7a;   --red-dim:rgba(224,122,122,.12);
+    --radius:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Jost',sans-serif;font-weight:300;min-height:100vh;padding:60px 20px 100px;}
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.5;}
+  .wrapper{max-width:720px;margin:0 auto;position:relative;z-index:1;}
+
+  /* HEADER */
+  header{margin-bottom:64px;text-align:center;}
+  .eyebrow{font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--accent);margin-bottom:20px;}
+  h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(2rem,5vw,3.2rem);line-height:1.15;margin-bottom:20px;}
+  h1 em{font-style:italic;color:var(--accent);}
+  header p{font-size:14px;color:var(--muted);line-height:1.7;max-width:480px;margin:0 auto;}
+
+  /* PROGRESS */
+  .survey-progress{display:flex;align-items:center;gap:14px;margin-bottom:48px;}
+  .survey-progress-track{flex:1;height:2px;background:var(--border);border-radius:2px;overflow:hidden;}
+  .survey-progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .5s ease;width:0%;}
+  .survey-progress-label{font-size:12px;color:var(--muted);white-space:nowrap;min-width:60px;text-align:right;}
+
+  /* CARDS */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px 36px 36px;margin-bottom:24px;transition:border-color .3s,box-shadow .3s;opacity:0;transform:translateY(16px);animation:fadeUp .5s ease forwards;}
+  .card:nth-child(1){animation-delay:.05s}.card:nth-child(2){animation-delay:.10s}.card:nth-child(3){animation-delay:.15s}.card:nth-child(4){animation-delay:.20s}
+  .card:nth-child(5){animation-delay:.25s}.card:nth-child(6){animation-delay:.30s}.card:nth-child(7){animation-delay:.35s}.card:nth-child(8){animation-delay:.40s}
+  @keyframes fadeUp{to{opacity:1;transform:translateY(0);}}
+  .card.answered{border-color:rgba(201,169,110,.25);box-shadow:0 0 0 1px rgba(201,169,110,.08);}
+  .card-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:24px;}
+  .card-number{font-family:'Cormorant Garamond',serif;font-size:13px;color:var(--accent);padding-top:3px;min-width:24px;}
+  .card-title{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:400;line-height:1.4;}
+
+  /* AUDIO PLAYER */
+  .audio-player{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+  .play-btn{width:36px;height:36px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,transform .15s;}
+  .play-btn:hover{background:#dbb97e;transform:scale(1.05);}
+  .play-btn svg{width:14px;height:14px;fill:#0e0e10;margin-left:2px;}
+  .play-btn svg.icon-pause{display:none;margin-left:0;}
+  .play-btn.playing svg.icon-play{display:none;}
+  .play-btn.playing svg.icon-pause{display:block;}
+  .progress-area{flex:1;display:flex;flex-direction:column;gap:6px;}
+  .progress-bar{width:100%;height:3px;background:var(--progress-bg);border-radius:3px;cursor:pointer;}
+  .progress-fill{height:100%;background:var(--accent);border-radius:3px;width:0%;pointer-events:none;}
+  .time-display{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
+
+  /* EMOTIONS */
+  .emotions-label{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+  .emotions-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .emotion-btn{background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Jost',sans-serif;font-size:13px;padding:10px 8px;cursor:pointer;text-align:center;position:relative;overflow:hidden;transition:all .2s;}
+  .emotion-btn:hover{border-color:rgba(201,169,110,.4);color:var(--text);background:var(--accent-dim);}
+  .emotion-btn.selected{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+  .emotion-btn.selected::after{content:'✓';position:absolute;top:4px;right:6px;font-size:9px;color:var(--accent);opacity:.7;}
+
+  /* SUBMIT */
+  .submit-zone{margin-top:48px;text-align:center;opacity:0;transform:translateY(12px);transition:opacity .4s,transform .4s;pointer-events:none;}
+  .submit-zone.visible{opacity:1;transform:translateY(0);pointer-events:all;}
+  .submit-counter{font-size:13px;color:var(--muted);margin-bottom:20px;}
+  .submit-counter span{color:var(--accent);font-weight:500;}
+  .submit-btn{background:var(--accent);color:#0e0e10;border:none;border-radius:8px;font-family:'Jost',sans-serif;font-size:14px;font-weight:500;letter-spacing:.08em;padding:14px 40px;cursor:pointer;transition:background .2s,transform .15s;}
+  .submit-btn:hover{background:#dbb97e;transform:translateY(-1px);}
+  .submit-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+  .status-msg{margin-top:16px;font-size:13px;color:var(--muted);min-height:20px;}
+  .status-msg.error{color:var(--red);}
+
+  /* SCREENS */
+  .screen{display:none;}
+  .screen.visible{display:block;animation:fadeUp .5s ease forwards;opacity:0;}
+
+  /* SUCCESS */
+  .success-screen{text-align:center;padding:64px 20px 40px;}
+  .success-screen .check{font-size:48px;color:var(--accent);margin-bottom:24px;}
+  .success-screen h2{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;margin-bottom:10px;}
+  .success-screen p{color:var(--muted);font-size:14px;margin-bottom:32px;}
+  .reveal-btn{background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-family:'Jost',sans-serif;font-size:13px;padding:12px 32px;cursor:pointer;transition:background .2s,color .2s;}
+  .reveal-btn:hover{background:var(--accent);color:#0e0e10;}
+
+  /* FEEDBACK */
+  .feedback-header{text-align:center;margin-bottom:40px;}
+  .feedback-header h2{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;margin-bottom:8px;}
+  .feedback-header p{font-size:13px;color:var(--muted);}
+
+  .score-banner{text-align:center;margin-bottom:40px;padding:28px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);}
+  .score-num{font-family:'Cormorant Garamond',serif;font-size:3.5rem;color:var(--accent);line-height:1;}
+  .score-sub{font-size:13px;color:var(--muted);margin-top:6px;}
+
+  .fb-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin-bottom:16px;opacity:0;transform:translateY(12px);animation:fadeUp .4s ease forwards;}
+  .fb-card:nth-child(1){animation-delay:.05s}.fb-card:nth-child(2){animation-delay:.10s}.fb-card:nth-child(3){animation-delay:.15s}.fb-card:nth-child(4){animation-delay:.20s}
+  .fb-card:nth-child(5){animation-delay:.25s}.fb-card:nth-child(6){animation-delay:.30s}.fb-card:nth-child(7){animation-delay:.35s}.fb-card:nth-child(8){animation-delay:.40s}
+
+  .fb-top{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+  .fb-num{font-family:'Cormorant Garamond',serif;font-size:12px;color:var(--accent);min-width:22px;}
+  .fb-title{font-family:'Cormorant Garamond',serif;font-size:1.05rem;flex:1;}
+  .fb-replay{width:28px;height:28px;border-radius:50%;background:var(--accent-dim);border:1px solid rgba(201,169,110,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;}
+  .fb-replay:hover{background:rgba(201,169,110,.25);}
+  .fb-replay svg{width:10px;height:10px;fill:var(--accent);margin-left:1px;}
+  .fb-replay svg.icon-pause{display:none;margin-left:0;}
+  .fb-replay.playing svg.icon-play{display:none;}
+  .fb-replay.playing svg.icon-pause{display:block;}
+  .fb-bar-wrap{flex:1;display:flex;flex-direction:column;gap:4px;}
+  .fb-progress{width:100%;height:2px;background:var(--progress-bg);border-radius:2px;cursor:pointer;}
+  .fb-progress-fill{height:100%;background:var(--accent);border-radius:2px;width:0%;pointer-events:none;}
+  .fb-time{font-size:10px;color:var(--muted);display:flex;justify-content:space-between;}
+  .fb-result{display:flex;gap:24px;}
+  .fb-col{flex:1;}
+  .fb-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+  .fb-tag{display:inline-block;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid var(--border);}
+  .fb-tag.yours{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+  .fb-tag.match{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+  .fb-tag.miss{background:var(--red-dim);border-color:var(--red);color:var(--red);}
+
+  /* COMMENT SECTION */
+  .comment-section{margin-top:40px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px 36px;}
+  .comment-section h3{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:400;margin-bottom:8px;}
+  .comment-section p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
+  .comment-textarea{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Jost',sans-serif;font-size:14px;font-weight:300;padding:16px;resize:vertical;min-height:140px;transition:border-color .2s;outline:none;}
+  .comment-textarea:focus{border-color:rgba(201,169,110,.5);}
+  .comment-textarea::placeholder{color:var(--muted);}
+  .comment-send-btn{margin-top:16px;background:var(--accent);color:#0e0e10;border:none;border-radius:8px;font-family:'Jost',sans-serif;font-size:14px;font-weight:500;letter-spacing:.08em;padding:12px 36px;cursor:pointer;transition:background .2s,transform .15s;}
+  .comment-send-btn:hover{background:#dbb97e;transform:translateY(-1px);}
+  .comment-send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+  .comment-status{margin-top:12px;font-size:13px;color:var(--muted);min-height:18px;}
+  .comment-status.ok{color:var(--green);}
+  .comment-status.error{color:var(--red);}
+
+  /* FINAL THANKS */
+  .final-thanks{text-align:center;padding:48px 20px;display:none;}
+  .final-thanks.visible{display:block;animation:fadeUp .5s ease forwards;opacity:0;}
+  .final-thanks .big-mark{font-size:40px;color:var(--accent);margin-bottom:20px;}
+  .final-thanks h2{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;margin-bottom:8px;}
+  .final-thanks p{font-size:14px;color:var(--muted);}
+
+  @media(max-width:500px){
+    .emotions-grid{grid-template-columns:repeat(2,1fr);}
+    .card,.fb-card,.comment-section{padding:24px 18px;}
+    .fb-result{flex-direction:column;gap:14px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ══ SURVEY ══ -->
+  <div id="surveyView">
+    <header>
+      <p class="eyebrow">Lien musique émotions</p>
+      <h1>Musique &amp; <em>Émotions</em></h1>
+      <p>Écoutez chaque extrait et associez-le à l'émotion qu'il évoque le plus spontanément pour vous. Il n'y a pas de bonne ou mauvaise réponse !</p>
+    </header>
+    <div class="survey-progress">
+      <div class="survey-progress-track"><div class="survey-progress-fill" id="progressFill"></div></div>
+      <div class="survey-progress-label" id="progressLabel">0 / 8</div>
+    </div>
+    <div id="surveyCards"></div>
+    <div class="submit-zone" id="submitZone">
+      <p class="submit-counter">Vous avez répondu à <span id="answeredCount">0</span> extraits sur 8</p>
+      <button class="submit-btn" id="submitBtn" onclick="submitSurvey()">Envoyer mes réponses</button>
+      <p class="status-msg" id="statusMsg"></p>
+    </div>
+  </div>
+
+  <!-- ══ SUCCESS ══ -->
+  <div class="success-screen screen" id="successScreen">
+    <div class="check">✦</div>
+    <h2>Merci pour votre participation</h2>
+    <p>Vos réponses ont bien été enregistrées.</p>
+    <button class="reveal-btn" onclick="showFeedback()">Voir mes associations vs les vôtres →</button>
+  </div>
+
+  <!-- ══ FEEDBACK + COMMENT ══ -->
+  <div class="screen" id="feedbackScreen">
+    <div class="feedback-header">
+      <h2>Résultats &amp; <em style="font-style:italic;color:var(--accent)">Associations</em></h2>
+      <p>Comparaison entre votre ressenti et les associations choisies pour cette étude.</p>
+    </div>
+    <div class="score-banner">
+      <div class="score-num" id="scoreNum">–</div>
+      <div class="score-sub" id="scoreSub"></div>
+    </div>
+    <div id="feedbackCards"></div>
+
+    <!-- Champ commentaire -->
+    <div class="comment-section">
+      <h3>Votre avis sur ces associations</h3>
+      <p>Êtes-vous d'accord avec les émotions que j'ai choisies pour chaque extrait ? Certaines vous semblent-elles évidentes, d'autres surprenantes ? N'hésitez pas à développer.</p>
+      <textarea class="comment-textarea" id="commentField" placeholder="Vos impressions, accords ou désaccords…"></textarea>
+      <button class="comment-send-btn" id="commentBtn" onclick="sendComment()">Envoyer mon commentaire</button>
+      <p class="comment-status" id="commentStatus"></p>
+    </div>
+  </div>
+
+  <!-- ══ FINAL THANKS ══ -->
+  <div class="final-thanks" id="finalThanks">
+    <div class="big-mark">✦</div>
+    <h2>Merci pour votre retour !</h2>
+    <p>Votre commentaire a bien été enregistré.</p>
+  </div>
+
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────
+// Remplace TON_ID par l'ID de déploiement de ton Apps Script
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykhnCibF3uX99PodRpNsnJDhe5WjTZ7XzMVOLUdf000cOIkIoXIUvSvGmK4OAbcyk4/exec';
+
+const TRACKS = [
+  { file:'birth.mp3',         label:'Birth of a Hero' },
+  { file:'craie.mp3',         label:'Bruit de craie'  },
+  { file:'goofy_cartoon.mp3', label:'Cartoon sound'   },
+  { file:'o_fortuna.mp3',     label:'O Fortuna'       },
+  { file:'oogway.mp3',        label:'Oogway Ascends'  },
+  { file:'peer_gynt.mp3',     label:'Peer Gynt'       },
+  { file:'sad_theme.mp3',     label:'Sad Piano'       },
+  { file:'time.mp3',          label:'Time'            },
+];
+
+// Tes associations (même ordre que TRACKS)
+const YOUR_CHOICES = ['Joie','Dégoût','Surprise','Colère','Confiance','Peur','Tristesse','Anticipation'];
+
+const EMOTIONS = ['Colère','Dégoût','Tristesse','Surprise','Peur','Confiance','Joie','Anticipation'];
+
+// ── State ────────────────────────────────────────────────────────
+const answers   = new Array(TRACKS.length).fill(null);
+let sessionId   = Math.random().toString(36).slice(2,10).toUpperCase();
+let currentAudio = null, currentBtn = null, raf = null;
+
+// ── Build survey cards ────────────────────────────────────────────
+const container = document.getElementById('surveyCards');
+TRACKS.forEach((track, i) => {
+  const num = String(i+1).padStart(2,'0');
+  const btns = EMOTIONS.map(e =>
+    `<button class="emotion-btn" data-emotion="${e}" data-card="${i}">${e}</button>`
+  ).join('');
+  container.innerHTML += `
+    <div class="card" data-index="${i}">
+      <div class="card-header">
+        <span class="card-number">${num}</span>
+        <span class="card-title">Extrait ${num}</span>
+      </div>
+      <div class="audio-player">
+        <button class="play-btn" data-index="${i}">
+          <svg class="icon-play" viewBox="0 0 16 16"><path d="M3 2l11 6-11 6V2z"/></svg>
+          <svg class="icon-pause" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="12"/><rect x="9" y="2" width="5" height="12"/></svg>
+        </button>
+        <div class="progress-area">
+          <div class="progress-bar" data-index="${i}"><div class="progress-fill"></div></div>
+          <div class="time-display"><span class="time-current">0:00</span><span class="time-total">–:––</span></div>
+        </div>
+      </div>
+      <p class="emotions-label">Quelle émotion ressentez-vous ?</p>
+      <div class="emotions-grid" data-index="${i}">${btns}</div>
+      <audio data-index="${i}" src="${track.file}" preload="none"></audio>
+    </div>`;
+});
+
+// ── Audio engine ─────────────────────────────────────────────────
+const fmt = s => (!s||isNaN(s)) ? '0:00' : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+
+function stopAll() {
+  if (currentAudio) {
+    currentAudio.pause();
+    if (currentBtn) currentBtn.classList.remove('playing');
+    cancelAnimationFrame(raf);
+    currentAudio = null; currentBtn = null;
+  }
+}
+
+function playAudio(btn, audio, fillEl, curEl, totEl, barEl) {
+  if (currentAudio === audio && !audio.paused) { stopAll(); return; }
+  stopAll();
+  audio.play().catch(()=>{});
+  btn.classList.add('playing');
+  currentAudio = audio; currentBtn = btn;
+  const setDur = () => totEl.textContent = fmt(audio.duration);
+  audio.readyState >= 1 ? setDur() : audio.addEventListener('loadedmetadata', setDur, {once:true});
+  const tick = () => {
+    if (audio.paused || audio.ended) return;
+    fillEl.style.width = (audio.currentTime / (audio.duration||1) * 100) + '%';
+    curEl.textContent = fmt(audio.currentTime);
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  audio.onended = () => {
+    btn.classList.remove('playing');
+    fillEl.style.width = '100%';
+    curEl.textContent = fmt(audio.duration);
+    currentAudio = null; currentBtn = null; cancelAnimationFrame(raf);
+  };
+  barEl.onclick = e => {
+    if (!audio.duration) return;
+    const r = barEl.getBoundingClientRect();
+    audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration;
+  };
+}
+
+document.getElementById('surveyCards').addEventListener('click', e => {
+  const btn = e.target.closest('.play-btn[data-index]');
+  if (!btn) return;
+  const i = parseInt(btn.dataset.index);
+  playAudio(btn,
+    document.querySelector(`audio[data-index="${i}"]`),
+    document.querySelector(`.progress-bar[data-index="${i}"] .progress-fill`),
+    document.querySelector(`.card[data-index="${i}"] .time-current`),
+    document.querySelector(`.card[data-index="${i}"] .time-total`),
+    document.querySelector(`.progress-bar[data-index="${i}"]`)
+  );
+});
+
+document.getElementById('surveyCards').addEventListener('click', e => {
+  const btn = e.target.closest('.emotion-btn');
+  if (!btn) return;
+  const i = parseInt(btn.dataset.card);
+  document.querySelectorAll(`.emotions-grid[data-index="${i}"] .emotion-btn`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  answers[i] = btn.dataset.emotion;
+  document.querySelector(`.card[data-index="${i}"]`).classList.add('answered');
+  updateProgress();
+});
+
+function updateProgress() {
+  const done = answers.filter(Boolean).length;
+  document.getElementById('progressFill').style.width = (done / TRACKS.length * 100) + '%';
+  document.getElementById('progressLabel').textContent = `${done} / ${TRACKS.length}`;
+  document.getElementById('answeredCount').textContent = done;
+  document.getElementById('submitZone').classList.add('visible');
+  document.getElementById('submitBtn').disabled = done < TRACKS.length;
+}
+updateProgress();
+
+// ── Submit — passage par URL params (fiable avec Apps Script) ────
+function buildParams(obj) {
+  // Sérialise un objet plat en query string
+  return Object.entries(obj).map(([k,v]) =>
+    encodeURIComponent(k) + '=' + encodeURIComponent(v)
+  ).join('&');
+}
+
+async function callScript(params) {
+  // Apps Script doGet + doPost acceptent tous les deux les paramètres GET
+  // On utilise fetch GET : pas de preflight, pas de CORS
+  const url = GOOGLE_SCRIPT_URL + '?' + buildParams(params);
+  const res = await fetch(url, { method:'GET', mode:'no-cors' });
+  // no-cors => opaque response, on ne peut pas lire status, mais la requête est bien reçue
+  return true;
+}
+
+async function submitSurvey() {
+  const btn = document.getElementById('submitBtn');
+  const msg = document.getElementById('statusMsg');
+  if (answers.some(a => !a)) {
+    msg.textContent = 'Merci de répondre à tous les extraits avant d\'envoyer.';
+    msg.className = 'status-msg error'; return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Envoi en cours…';
+  msg.className = 'status-msg';
+
+  // On encode chaque réponse sous la forme extrait_N, emotion_N, auteur_N, match_N
+  const params = { action:'reponses', sessionId, timestamp: new Date().toISOString() };
+  TRACKS.forEach((t, i) => {
+    params[`extrait_${i+1}`]  = t.label;
+    params[`fichier_${i+1}`]  = t.file.replace('.mp3','');
+    params[`emotion_${i+1}`]  = answers[i];
+    params[`auteur_${i+1}`]   = YOUR_CHOICES[i];
+    params[`match_${i+1}`]    = answers[i] === YOUR_CHOICES[i] ? 'OUI' : 'NON';
+  });
+
+  try {
+    await callScript(params);
+    stopAll();
+    document.getElementById('surveyView').style.display = 'none';
+    document.getElementById('successScreen').classList.add('visible');
+  } catch {
+    btn.disabled = false;
+    btn.textContent = 'Envoyer mes réponses';
+    msg.textContent = 'Erreur réseau. Vérifiez votre connexion et réessayez.';
+    msg.className = 'status-msg error';
+  }
+}
+
+// ── Feedback screen ───────────────────────────────────────────────
+function showFeedback() {
+  document.getElementById('successScreen').classList.remove('visible');
+  const fbCards = document.getElementById('feedbackCards');
+  fbCards.innerHTML = '';
+  let matches = 0;
+
+  TRACKS.forEach((track, i) => {
+    const user = answers[i], mine = YOUR_CHOICES[i], ok = user === mine;
+    if (ok) matches++;
+    const num = String(i+1).padStart(2,'00');
+    fbCards.innerHTML += `
+      <div class="fb-card">
+        <div class="fb-top">
+          <span class="fb-num">${String(i+1).padStart(2,'0')}</span>
+          <span class="fb-title">${track.label}</span>
+          <button class="fb-replay" data-fb="${i}">
+            <svg class="icon-play" viewBox="0 0 16 16"><path d="M3 2l11 6-11 6V2z"/></svg>
+            <svg class="icon-pause" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="12"/><rect x="9" y="2" width="5" height="12"/></svg>
+          </button>
+          <div class="fb-bar-wrap">
+            <div class="fb-progress" data-fb="${i}"><div class="fb-progress-fill"></div></div>
+            <div class="fb-time"><span class="fb-cur">0:00</span><span class="fb-tot">–:––</span></div>
+          </div>
+        </div>
+        <div class="fb-result">
+          <div class="fb-col">
+            <p class="fb-label">Votre ressenti</p>
+            <span class="fb-tag ${ok?'match':'miss'}">${user}</span>
+          </div>
+          <div class="fb-col">
+            <p class="fb-label">Mon association</p>
+            <span class="fb-tag yours">${mine}</span>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  document.getElementById('scoreNum').textContent = `${matches}/8`;
+  document.getElementById('scoreSub').textContent =
+    matches===8 ? 'Concordance parfaite !' :
+    matches>=6  ? 'Très bonne concordance !' :
+    matches>=4  ? 'Bonne concordance !' :
+    'correspondances — chaque ressenti est unique !';
+
+  fbCards.addEventListener('click', e => {
+    const btn = e.target.closest('.fb-replay');
+    if (!btn) return;
+    const i = parseInt(btn.dataset.fb);
+    const top = btn.closest('.fb-top');
+    playAudio(btn,
+      document.querySelector(`audio[data-index="${i}"]`),
+      top.querySelector('.fb-progress-fill'),
+      top.querySelector('.fb-cur'),
+      top.querySelector('.fb-tot'),
+      top.querySelector('.fb-progress')
+    );
+  });
+
+  document.getElementById('feedbackScreen').classList.add('visible');
+}
+
+// ── Send comment ──────────────────────────────────────────────────
+async function sendComment() {
+  const commentBtn    = document.getElementById('commentBtn');
+  const commentStatus = document.getElementById('commentStatus');
+  const text = document.getElementById('commentField').value.trim();
+
+  if (!text) {
+    commentStatus.textContent = 'Merci d\'écrire un commentaire avant d\'envoyer.';
+    commentStatus.className   = 'comment-status error'; return;
+  }
+
+  commentBtn.disabled = true;
+  commentBtn.textContent = 'Envoi…';
+  commentStatus.textContent = '';
+  commentStatus.className   = 'comment-status';
+
+  try {
+    await callScript({ action:'commentaire', sessionId, commentaire: text });
+    document.getElementById('feedbackScreen').classList.remove('visible');
+    document.getElementById('finalThanks').classList.add('visible');
+  } catch {
+    commentBtn.disabled = false;
+    commentBtn.textContent = 'Envoyer mon commentaire';
+    commentStatus.textContent = 'Erreur réseau. Réessayez.';
+    commentStatus.className   = 'comment-status error';
+  }
+}
+</script>
+</body>
+</html>
